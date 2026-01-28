@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Polinvent Signature Builder</title>
+  <title>Polinvent – Email aláírás generátor</title>
 </head>
 
 <body style="margin:0; padding:24px; background:#ffffff; font-family: Calibri, Arial, Helvetica, sans-serif; color:#000000;">
@@ -94,16 +94,56 @@
         .replaceAll("'", "&#039;");
     }
 
-    function outlookSafePhone(phone) {
-      // break automatic phone detection (Outlook)
-      return phone.replace(/ /g, '&#8203; ');
+    // Normalize Hungarian phone numbers to display format: +36 20 361 9946
+    // Supports inputs like: 06203619946, +36203619946, 0036203619946, 36 20 361 9946, 20 361 9946
+    // If it doesn't match expected pattern, returns original trimmed input.
+    function normalizeHuPhoneDisplay(raw) {
+      let s = String(raw || "").trim();
+
+      // remove common separators but keep intent
+      s = s.replace(/[()\-.]/g, " ");
+
+      // keep only digits and +
+      s = s.replace(/[^\d+]/g, "");
+
+      // 00 -> +
+      if (s.startsWith("00")) s = "+" + s.slice(2);
+
+      // remove leading + for parsing
+      let digits = s.startsWith("+") ? s.slice(1) : s;
+      digits = digits.replace(/\D/g, "");
+
+      // strip country code 36 if present
+      if (digits.startsWith("36")) digits = digits.slice(2);
+
+      // strip trunk 06 if present (some users paste 06...)
+      if (digits.startsWith("06")) digits = digits.slice(2);
+
+      // Expect HU national number without prefixes:
+      // - common mobile format: 9 digits (e.g. 20 + 7 digits)
+      if (!/^\d{9}$/.test(digits)) return String(raw || "").trim();
+
+      const provider = digits.slice(0, 2);
+      const rest = digits.slice(2); // 7 digits
+      const part1 = rest.slice(0, 3);
+      const part2 = rest.slice(3, 7);
+
+      return `+36 ${provider} ${part1} ${part2}`;
+    }
+
+    // tel: href should be + and digits only (no spaces)
+    function normalizeHuPhoneForTel(displayPhone) {
+      return String(displayPhone || "").replace(/[^\d+]/g, "");
     }
 
     function renderSignatureHtml() {
       const name = esc(elName.value.trim());
       const title = esc(elTitle.value.trim());
       const email = esc(elEmail.value.trim());
-      const phone = outlookSafePhone(esc(elPhone.value.trim()));
+
+      const phoneDisplayRaw = normalizeHuPhoneDisplay(elPhone.value.trim());
+      const phoneDisplay = esc(phoneDisplayRaw);
+      const phoneHref = esc(normalizeHuPhoneForTel(phoneDisplayRaw));
 
       const html = `
 <table cellpadding="0" cellspacing="0" border="0"
@@ -140,11 +180,9 @@
         ${email}
       </a>
       &nbsp;|&nbsp;
-      <a href="tel:${phone.replace(/\s+/g, '')}"
-      style="color:${GREY}; text-decoration:none;">
-      ${phone}
-</a>
-
+      <a href="tel:${phoneHref}" style="color:${GREY}; text-decoration:none;">
+        ${phoneDisplay}
+      </a>
     </td>
   </tr>
 
@@ -182,6 +220,11 @@
 
     function generate() {
       statusEl.textContent = "";
+
+      // Optional UX: normalize the phone field itself so users see the final format too
+      const normalized = normalizeHuPhoneDisplay(elPhone.value.trim());
+      elPhone.value = normalized;
+
       outputWrap.innerHTML = renderSignatureHtml();
       btnCopy.disabled = false;
       statusEl.textContent = "Aláírás legenerálva.";
