@@ -19,7 +19,7 @@
       <tr>
         <td style="padding:0 14px 10px 0;">
           <div style="font-size:11pt; margin:0 0 4px 0;">Név</div>
-          <input id="inpName" type="text" value="Fazekas Viktor"
+          <input id="inpName" type="text" value="John Doe"
                  style="width:320px; padding:8px; font-size:11pt; font-family:inherit;">
         </td>
 
@@ -33,13 +33,13 @@
       <tr>
         <td style="padding:0 14px 10px 0;">
           <div style="font-size:11pt; margin:0 0 4px 0;">Email</div>
-          <input id="inpEmail" type="email" value="viktor.fazekas@polinvent.com"
+          <input id="inpEmail" type="email" value="john.doe@polinvent.com"
                  style="width:320px; padding:8px; font-size:11pt; font-family:inherit;">
         </td>
 
         <td style="padding:0 0 10px 0;">
           <div style="font-size:11pt; margin:0 0 4px 0;">Telefonszám (nem link)</div>
-          <input id="inpPhone" type="text" value="+36 20 361 9946"
+          <input id="inpPhone" type="text" value="+36 20 123 4567"
                  style="width:320px; padding:8px; font-size:11pt; font-family:inherit;">
         </td>
       </tr>
@@ -58,10 +58,8 @@
 
     <div style="font-size:11pt; color:#555555; margin:0 0 8px 0;">Előnézet:</div>
 
-    <!-- OUTPUT (copy target) -->
-    <div id="outputWrap" style="padding:14px; border:1px solid #e6e6e6; display:inline-block;">
-      <!-- signature HTML is injected here -->
-    </div>
+    <!-- OUTPUT -->
+    <div id="outputWrap" style="padding:14px; border:1px solid #e6e6e6; display:inline-block;"></div>
 
   </div>
 
@@ -96,28 +94,27 @@
         .replaceAll("'", "&#039;");
     }
 
+    function outlookSafePhone(phone) {
+      // break automatic phone detection (Outlook)
+      return phone.replace(/ /g, '&#8203; ');
+    }
+
     function renderSignatureHtml() {
       const name = esc(elName.value.trim());
       const title = esc(elTitle.value.trim());
       const email = esc(elEmail.value.trim());
-      const phone = esc(elPhone.value.trim());
+      const phone = outlookSafePhone(esc(elPhone.value.trim()));
 
-      // EXACT formatting based on your "perfect signature" template,
-      // with ONLY these 4 fields parameterized.
       const html = `
 <table cellpadding="0" cellspacing="0" border="0"
        style="font-family: Calibri, Arial, Helvetica, sans-serif; color:#000000;">
 
   <tr>
-    <td style="font-size:11pt; font-weight:700; padding:0;">
-      ${name}
-    </td>
+    <td style="font-size:11pt; font-weight:700; padding:0;">${name}</td>
   </tr>
 
   <tr>
-    <td style="font-size:11pt; font-weight:400; padding:0;">
-      ${title}
-    </td>
+    <td style="font-size:11pt; font-weight:400; padding:0;">${title}</td>
   </tr>
 
   <tr>
@@ -127,9 +124,7 @@
   <tr>
     <td style="padding:0;">
       <a href="${POLINVENT_URL}" target="_blank" style="text-decoration:none;">
-        <img src="${LOGO_SRC}"
-             height="35"
-             alt="Polinvent"
+        <img src="${LOGO_SRC}" height="35" alt="Polinvent"
              style="display:block; border:0; outline:none;">
       </a>
     </td>
@@ -141,12 +136,11 @@
 
   <tr>
     <td style="font-size:10pt; color:${GREY}; padding:0;">
-      <a href="mailto:${email}"
-         style="color:${GREY}; text-decoration:none;">
+      <a href="mailto:${email}" style="color:${GREY}; text-decoration:none;">
         ${email}
       </a>
       &nbsp;|&nbsp;
-      ${phone}
+      <span style="mso-no-proof:yes;">${phone}</span>
     </td>
   </tr>
 
@@ -154,9 +148,7 @@
     <td style="font-size:10pt; color:${GREY}; padding:0;">
       ${ADDRESS}
       &nbsp;|&nbsp;
-      <a href="${WEBSITE_URL}"
-         target="_blank"
-         style="color:${GREY}; text-decoration:none;">
+      <a href="${WEBSITE_URL}" target="_blank" style="color:${GREY}; text-decoration:none;">
         ${WEBSITE_TEXT}
       </a>
     </td>
@@ -172,12 +164,8 @@
 
   <tr>
     <td style="padding:0;">
-      <a href="${WWETT_URL}"
-         target="_blank"
-         style="text-decoration:none;">
-        <img src="${BANNER_SRC}"
-             height="76"
-             alt="WWETT 2026"
+      <a href="${WWETT_URL}" target="_blank" style="text-decoration:none;">
+        <img src="${BANNER_SRC}" height="76" alt="WWETT 2026"
              style="display:block; border:0; outline:none;">
       </a>
     </td>
@@ -190,32 +178,25 @@
 
     function generate() {
       statusEl.textContent = "";
-      const html = renderSignatureHtml();
-      outputWrap.innerHTML = html;
+      outputWrap.innerHTML = renderSignatureHtml();
       btnCopy.disabled = false;
       statusEl.textContent = "Aláírás legenerálva.";
     }
 
     async function copyHtml() {
       statusEl.textContent = "";
-
-      // Ensure current state is rendered
       const html = renderSignatureHtml();
       outputWrap.innerHTML = html;
 
       try {
-        // Prefer modern clipboard API with HTML payload
         if (navigator.clipboard && window.ClipboardItem) {
           const blob = new Blob([html], { type: "text/html" });
           await navigator.clipboard.write([new ClipboardItem({ "text/html": blob })]);
           statusEl.textContent = "Kimásolva. Illeszd be az Outlook aláírás szerkesztőbe.";
           return;
         }
-      } catch (e) {
-        // fall through
-      }
+      } catch {}
 
-      // Fallback: select DOM and copy
       const range = document.createRange();
       range.selectNodeContents(outputWrap);
       const sel = window.getSelection();
@@ -230,7 +211,7 @@
     btnGenerate.addEventListener("click", generate);
     btnCopy.addEventListener("click", copyHtml);
 
-    // Optional: auto-generate once on load so preview is visible immediately
+    // auto-generate on load
     generate();
   </script>
 </body>
