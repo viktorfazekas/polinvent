@@ -38,7 +38,7 @@
         </td>
 
         <td style="padding:0 0 10px 0;">
-          <div style="font-size:11pt; margin:0 0 4px 0;">Telefonszám (nem link)</div>
+          <div style="font-size:11pt; margin:0 0 4px 0;">Telefonszám</div>
           <input id="inpPhone" type="text" value="+36 20 123 4567"
                  style="width:320px; padding:8px; font-size:11pt; font-family:inherit;">
         </td>
@@ -70,8 +70,8 @@
     const POLINVENT_URL = "https://www.polinvent.com/";
     const WWETT_URL = "https://www.wwettshow.com/en/home.html";
 
-    const LOGO_SRC = "polinvent_logo_2026.png";
-    const BANNER_SRC = "polinvent_wwett2026_banner_new.png";
+    const LOGO_SRC = "https://viktorfazekas.github.io/polinvent/polinvent_logo_2026.png";
+    const BANNER_SRC = "https://viktorfazekas.github.io/polinvent/polinvent_wwett2026_banner_new.png";
 
     const GREY = "#999999";
 
@@ -140,7 +140,11 @@
         ${email}
       </a>
       &nbsp;|&nbsp;
-      <span style="mso-no-proof:yes;">${phone}</span>
+      <a href="tel:${phone.replace(/\s+/g, '')}"
+      style="color:${GREY}; text-decoration:none;">
+      ${phone}
+</a>
+
     </td>
   </tr>
 
